@@ -1,5 +1,5 @@
-FROM node:10.5.0-slim
-RUN npm install -g json-server curl
+FROM node:12.11.1-slim
+RUN npm install -g json-server
 
 ADD run.sh default.json /
 ENTRYPOINT ["bash", "/run.sh"]
