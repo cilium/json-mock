@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVER_ARGS="--host 0.0.0.0 $@"
+SERVER_ARGS="--host '' $@"
 
 if [ ! -z "$PORT" ]; then
         SERVER_ARGS="$SERVER_ARGS --port $PORT"
