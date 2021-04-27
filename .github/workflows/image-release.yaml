@@ -1,0 +1,82 @@
+name: Image Release Build
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+
+jobs:
+  build-and-push:
+    if: ${{ github.repository == 'cilium/json-mock' }}
+    environment: release
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        include:
+          - name: json-mock
+            dockerfile: ./Dockerfile
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@012185ccbeb554a7f5f987bea0f1a73519b3cdf5
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c308fdd69d26ed66f4506ebd74b180abe5362145
+
+      - name: Login to quay.io
+        uses: docker/login-action@f3364599c6aa293cdc2b8391b1b56d0c30e45c8a
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RELEASE_JSON_MOCK_USERNAME }}
+          password: ${{ secrets.QUAY_RELEASE_JSON_MOCK_PASSWORD }}
+
+      - name: Getting image tag
+        id: tag
+        run: |
+          echo ::set-output name=tag::${GITHUB_REF##*/}
+
+      - name: Checkout Source Code
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+
+      - name: Release Build ${{ matrix.name }}
+        uses: docker/build-push-action@e1b7f96249f2e4c8e4ac1519b9608c0d48944a1f
+        id: docker_build_release
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            quay.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.tag.outputs.tag }}
+            quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ github.sha }}
+
+      # Upload artifact digests
+      - name: Upload artifact digests
+        uses: actions/upload-artifact@ee69f02b3dfdecd58bb31b4d133da38ba6fe3700
+        with:
+          name: image-digest ${{ matrix.name }}
+          path: image-digest
+          retention-days: 1
+
+  image-digests:
+    if: ${{ github.repository == 'cilium/json-mock' }}
+    name: Display Digests
+    runs-on: ubuntu-20.04
+    needs: build-and-push
+    steps:
+      - name: Downloading Image Digests
+        shell: bash
+        run: |
+          mkdir -p image-digest/
+
+      - name: Download digests of all images built
+        uses: actions/download-artifact@158ca71f7c614ae705e79f25522ef4658df18253
+        with:
+          path: image-digest/
+
+      - name: Image Digests Output
+        shell: bash
+        run: |
+          cd image-digest/
+          find -type f | sort | xargs -d '\n' cat
