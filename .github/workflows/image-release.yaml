@@ -51,6 +51,20 @@ jobs:
             quay.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.tag.outputs.tag }}
             quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ github.sha }}
 
+      - name: Image Release Digest
+        shell: bash
+        run: |
+          mkdir -p image-digest/
+          job_name=${{ matrix.name }}
+          job_name_capital=${job_name^^}
+          job_name_underscored=${job_name_capital//-/_}
+          echo "${job_name_underscored}_DIGEST := \"${{ steps.docker_build_release.outputs.digest }}\"" > image-digest/makefile-digest.txt
+
+          echo "### ${{ matrix.name }}" > image-digest/${{ matrix.name }}.txt
+          echo "" >> image-digest/${{ matrix.name }}.txt
+          echo "\`quay.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.tag.outputs.tag }}@${{ steps.docker_build_release.outputs.digest }}\`" >> image-digest/${{ matrix.name }}.txt
+          echo "" >> image-digest/${{ matrix.name }}.txt
+
       # Upload artifact digests
       - name: Upload artifact digests
         uses: actions/upload-artifact@ee69f02b3dfdecd58bb31b4d133da38ba6fe3700
