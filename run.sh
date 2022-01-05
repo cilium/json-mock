@@ -14,4 +14,4 @@ else
         SERVER_ARGS="$SERVER_ARGS --watch /default.json"
 fi
 
-json-server $SERVER_ARGS
+sh -c "json-server $SERVER_ARGS"
