@@ -6,7 +6,7 @@
 # BUILDPLATFORM is an automatic platform ARG enabled by Docker BuildKit.
 # Represents the plataform where the build is happening, do not mix with
 # TARGETARCH
-FROM docker.io/library/node:18.10.0-slim@sha256:4d8e0347076a748332aa8863e9b2068a006bd9814065c77e3a85d26c2a8b19ea
+FROM docker.io/library/node:18.10.0-slim@sha256:d900c28d8cbb51cee5473215e5941b6334d9b02da75ef60f490d4c0c13160bb1
 RUN npm install -g json-server \
     && apt-get update \
     && apt-get upgrade -y \
