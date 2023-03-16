@@ -14,4 +14,10 @@ else
         SERVER_ARGS="$SERVER_ARGS --watch /default.json"
 fi
 
+if [ ! -z "$MIDDLEWARE" ]; then
+        SERVER_ARGS="$SERVER_ARGS --middlewares $FILE"
+else
+        SERVER_ARGS="$SERVER_ARGS --middlewares /auth-header.js"
+fi
+
 sh -c "json-server $SERVER_ARGS"
