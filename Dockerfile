@@ -15,6 +15,6 @@ RUN npm install -g json-server \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ADD run.sh default.json auth-header.js /
+ADD run.sh default.json middleware.js /
 ENTRYPOINT ["bash", "/run.sh"]
 CMD []
