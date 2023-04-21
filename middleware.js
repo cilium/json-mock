@@ -5,6 +5,10 @@ module.exports = (req, res, next) => {
             return
         }
     }
-    
+
+    if (req.path.indexOf("/client-ip") === 0) {
+        res.json({ "client-ip": req.connection.remoteAddress });
+    }
+
     next()
 }

@@ -17,7 +17,7 @@ fi
 if [ ! -z "$MIDDLEWARE" ]; then
         SERVER_ARGS="$SERVER_ARGS --middlewares $MIDDLEWARE"
 else
-        SERVER_ARGS="$SERVER_ARGS --middlewares /auth-header.js"
+        SERVER_ARGS="$SERVER_ARGS --middlewares /middleware.js"
 fi
 
 sh -c "json-server $SERVER_ARGS"
