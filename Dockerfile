@@ -10,7 +10,7 @@ FROM docker.io/library/node:21.1.0-slim@sha256:d1144205c1f72a9788d42ba0b899a9fa2
 RUN npm install -g json-server \
     && apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y curl \
+    && apt-get install -y curl iproute2 \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
