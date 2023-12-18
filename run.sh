@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVER_ARGS="--host '' $@"
+SERVER_ARGS="$@"
 
 if [ ! -z "$PORT" ]; then
         SERVER_ARGS="$SERVER_ARGS --port $PORT"
@@ -20,4 +20,4 @@ else
         SERVER_ARGS="$SERVER_ARGS --middlewares /middleware.js"
 fi
 
-sh -c "json-server $SERVER_ARGS"
+exec /usr/bin/tini -- /usr/local/bin/json-server --host "" $SERVER_ARGS
