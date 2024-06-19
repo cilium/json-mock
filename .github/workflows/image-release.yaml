@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Release Build ${{ matrix.name }}
-        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0
+        uses: docker/build-push-action@94f8f8c2eec4bc3f1d78c1755580779804cb87b2
         id: docker_build_release
         with:
           context: .
