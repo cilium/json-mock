@@ -51,7 +51,7 @@ jobs:
       # master branch pushes
       - name: CI Build ${{ matrix.name }}
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
         id: docker_build_ci_master
         with:
           context: .
@@ -73,7 +73,7 @@ jobs:
       # PR updates
       - name: CI Build ${{ matrix.name }}
         if: ${{ github.event_name == 'pull_request_target' }}
-        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
         id: docker_build_ci_pr
         with:
           context: .
