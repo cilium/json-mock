@@ -1,3 +1,5 @@
+const os = require("os")
+
 module.exports = (req, res, next) => {
     if (req.path.indexOf("/auth-header-required") === 0) {
         if (req.get("Authorization") !== "Bearer 123456") {
@@ -8,6 +10,11 @@ module.exports = (req, res, next) => {
 
     if (req.path.indexOf("/client-ip") === 0) {
         res.json({ "client-ip": req.connection.remoteAddress });
+    }
+
+    if (req.path.indexOf("/hostname") === 0) {
+        res.json({ hostname: os.hostname() })
+        return
     }
 
     next()
