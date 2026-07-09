@@ -9,9 +9,9 @@ else
 fi
 
 if [ ! -z "$FILE" ]; then
-        SERVER_ARGS="$SERVER_ARGS --watch $FILE"
+        SERVER_ARGS="$SERVER_ARGS $FILE"
 else
-        SERVER_ARGS="$SERVER_ARGS --watch /default.json"
+        SERVER_ARGS="$SERVER_ARGS /default.json"
 fi
 
 if [ ! -z "$MIDDLEWARE" ]; then
