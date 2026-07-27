@@ -28,7 +28,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a
 
       - name: Login to quay.io for CI
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
+        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_CI_JSON_MOCK_USERNAME }}
