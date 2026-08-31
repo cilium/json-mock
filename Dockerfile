@@ -6,14 +6,9 @@
 # BUILDPLATFORM is an automatic platform ARG enabled by Docker BuildKit.
 # Represents the plataform where the build is happening, do not mix with
 # TARGETARCH
-FROM docker.io/library/node:26.7.0-slim@sha256:5758d367d7b4f48b73a9bb3530e687e47efb289f3b43f9c0450a25225ae0db5d
+FROM docker.io/library/node:26.7.0-alpine@sha256:b4fea132199070b0c8ea9ac66f363fe2cd6d1e4f994e61d8c87976c2157a1b8a
 RUN npm install -g json-server@v0.17.4 \
-    && apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y tini curl iproute2 dnsutils \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apk add --no-cache tini curl bind-tools iproute2
 
 # Patch and increase node.js default keep alive timeout of 5s to 65s.
 #
@@ -28,5 +23,5 @@ RUN sed -i "/^  var server = http.createServer(this);/a \  server.keepAliveTimeo
     && grep "keepAliveTimeout" /usr/local/lib/node_modules/json-server/node_modules/express/lib/application.js
 
 ADD run.sh default.json middleware.js /
-ENTRYPOINT ["bash", "/run.sh"]
+ENTRYPOINT ["sh", "/run.sh"]
 CMD []
