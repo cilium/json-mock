@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.2
+﻿# syntax=docker/dockerfile:1.2
 
 # Copyright 2021 Authors of Cilium
 # SPDX-License-Identifier: Apache-2.0
@@ -6,8 +6,10 @@
 # BUILDPLATFORM is an automatic platform ARG enabled by Docker BuildKit.
 # Represents the plataform where the build is happening, do not mix with
 # TARGETARCH
-FROM docker.io/library/node:26.8.2-slim@sha256:f7bb8247fdb16250dbec7fd0e24f091c6f5f0a29d256f3aef5816a7a369166b2
-RUN npm install -g json-server@v0.17.4 \
+FROM docker.io/library/node:26.8.1-slim@sha256:c0753125a3789977aefe869cbebccf70e3cfd7ea84ca48547458f02e4f1d7146
+ADD package.json /
+RUN npm install --omit=dev --prefix / \
+    && npm install -g json-server@v0.17.4 \
     && apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y tini curl iproute2 dnsutils \
