@@ -1,22 +1,27 @@
-const os = require("os")
+﻿const os = require("os")
+const compression = require("compression")
+const compress = compression()
 
 module.exports = (req, res, next) => {
-    if (req.path.indexOf("/auth-header-required") === 0) {
-        if (req.get("Authorization") !== "Bearer 123456") {
-            res.status(401).send('Invalid Authorization header, try setting it to "Bearer 123456"')
+    // Apply compression first, then proceed with the existing middleware logic
+    compress(req, res, () => {
+        if (req.path.startsWith("/auth-header-required")) {
+            if (req.get("Authorization") !== "******") {
+                res.status(401).send('Invalid Authorization header, try setting it to "******"')
+                return
+            }
+        }
+
+        if (req.path.startsWith("/client-ip")) {
+            res.json({ "client-ip": req.connection.remoteAddress });
             return
         }
-    }
 
-    if (req.path.indexOf("/client-ip") === 0) {
-        res.json({ "client-ip": req.connection.remoteAddress });
-        return
-    }
+        if (req.path.startsWith("/hostname")) {
+            res.json({ hostname: os.hostname() })
+            return
+        }
 
-    if (req.path.indexOf("/hostname") === 0) {
-        res.json({ hostname: os.hostname() })
-        return
-    }
-
-    next()
+        next()
+    })
 }

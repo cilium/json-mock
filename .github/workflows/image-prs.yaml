@@ -1,7 +1,7 @@
 name: Image PRs Build
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - synchronize
@@ -12,15 +12,66 @@ on:
 
 jobs:
   build-and-push-prs:
-    if: ${{ github.repository == 'cilium/json-mock' }}
+    if: ${{ github.repository == 'cilium/json-mock' && github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      # Required by the Quay OIDC token exchange.
+    strategy:
+      matrix:
+        include:
+          - name: json-mock
+            dockerfile: ./Dockerfile
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1
+
+      - name: Getting image tag
+        id: tag
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "tag=${PR_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Build PR image (without publishing)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        id: docker_build_ci_pr
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}
+
+      - name: Write PR image digest
+        shell: bash
+        run: |
+          mkdir -p image-digest/
+          echo "quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}@${{ steps.docker_build_ci_pr.outputs.digest }}" > image-digest/${{ matrix.name }}.txt
+
+      - name: Upload artifact digests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: image-digest ${{ matrix.name }}
+          path: image-digest
+          retention-days: 1
+
+  publish-master:
+    if: ${{ github.repository == 'cilium/json-mock' && github.event_name == 'push' }}
+    name: Build and publish master image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
       id-token: write
-    # Pins the OIDC token subject to
-    # repo:cilium/json-mock:environment:publish-ci-images, which is the identity federated
-    # with the Quay robot account.
+    # Pins the OIDC token subject to the publishing environment used by Quay.
     environment:
       name: publish-ci-images
       deployment: false
@@ -37,15 +88,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1
 
-      # Quay's registry endpoint only accepts credentials or a JWT signed by
-      # Quay itself, so the GitHub OIDC token cannot be used as the registry
-      # password directly. Trade it for a short lived robot token first.
-      #
-      # Because the job references an environment, the subject of the token is
-      # repo:cilium@21054566/json-mock@137378639:environment:publish-ci-images, the immutable
-      # form that carries the owner and repository ids. That is the identity
-      # federated with the robot account on the Quay side, so renaming the
-      # environment breaks the login.
+      # Exchange the GitHub OIDC token for a short-lived Quay robot token.
       - name: Get a quay.io robot token via OIDC
         id: registry-token
         env:
@@ -57,8 +100,6 @@ jobs:
             | jq -er '.value')"
           echo "::add-mask::${oidc_token}"
 
-          # Pass the credentials on stdin so that the OIDC token is not visible
-          # in the process list of the runner.
           robot_token="$(printf 'user = "%s:%s"\n' "${ROBOT}" "${oidc_token}" \
             | curl -sSf --retry 3 --retry-all-errors -K - \
               "https://quay.io/oauth2/federation/robot/token" \
@@ -74,23 +115,16 @@ jobs:
           username: ${{ vars.QUAY_ROBOT_CI }}
           password: ${{ steps.registry-token.outputs.token }}
 
-      - name: Getting image tag
+      - name: Get image tag
         id: tag
-        run: |
-          if [ ${{ github.event.pull_request.head.sha }} != "" ]; then
-            echo tag=${{ github.event.pull_request.head.sha }} >> $GITHUB_OUTPUT
-          else
-            echo tag=${{ github.sha }} >> $GITHUB_OUTPUT
-          fi
+        run: echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ steps.tag.outputs.tag }}
 
-      # master branch pushes
-      - name: CI Build ${{ matrix.name }}
-        if: ${{ github.event_name != 'pull_request_target' }}
+      - name: Build and publish master image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         id: docker_build_ci_master
         with:
@@ -102,35 +136,13 @@ jobs:
             quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:latest
             quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}
 
-      - name: CI Image Releases digests
-        if: ${{ github.event_name != 'pull_request_target' }}
+      - name: Write master image digests
         shell: bash
         run: |
           mkdir -p image-digest/
           echo "quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:latest@${{ steps.docker_build_ci_master.outputs.digest }}" > image-digest/${{ matrix.name }}.txt
           echo "quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}@${{ steps.docker_build_ci_master.outputs.digest }}" >> image-digest/${{ matrix.name }}.txt
 
-      # PR updates
-      - name: CI Build ${{ matrix.name }}
-        if: ${{ github.event_name == 'pull_request_target' }}
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
-        id: docker_build_ci_pr
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}
-
-      - name: CI Image Releases digests
-        if: ${{ github.event_name == 'pull_request_target' }}
-        shell: bash
-        run: |
-          mkdir -p image-digest/
-          echo "quay.io/${{ github.repository_owner }}/${{ matrix.name }}-ci:${{ steps.tag.outputs.tag }}@${{ steps.docker_build_ci_pr.outputs.digest }}" >> image-digest/${{ matrix.name }}.txt
-
-      # Upload artifact digests
       - name: Upload artifact digests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -139,15 +151,16 @@ jobs:
           retention-days: 1
 
   image-digests:
-    if: ${{ github.repository == 'cilium/json-mock' }}
+    if: ${{ always() && github.repository == 'cilium/json-mock' && (needs.build-and-push-prs.result == 'success' || needs.publish-master.result == 'success') }}
     name: Display Digests
     runs-on: ubuntu-24.04
-    needs: build-and-push-prs
+    needs:
+      - build-and-push-prs
+      - publish-master
     steps:
       - name: Downloading Image Digests
         shell: bash
-        run: |
-          mkdir -p image-digest/
+        run: mkdir -p image-digest/
 
       - name: Download digests of all images built
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
