@@ -87,6 +87,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ steps.tag.outputs.tag }}
+          # Intentionally permits untrusted fork PR code in pull_request_target; requires maintainer security review.
+          allow-unsafe-pr-checkout: true
 
       # master branch pushes
       - name: CI Build ${{ matrix.name }}
