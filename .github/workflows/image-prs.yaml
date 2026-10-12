@@ -41,7 +41,7 @@ jobs:
           ref: ${{ steps.tag.outputs.tag }}
 
       - name: Build PR image (without publishing)
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         id: docker_build_ci_pr
         with:
           context: .
@@ -125,7 +125,7 @@ jobs:
           ref: ${{ steps.tag.outputs.tag }}
 
       - name: Build and publish master image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         id: docker_build_ci_master
         with:
           context: .
