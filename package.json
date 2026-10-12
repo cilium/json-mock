@@ -1,0 +1,11 @@
+{
+  "name": "json-mock",
+  "version": "1.0.0",
+  "main": "run.sh",
+  "scripts": {
+    "start": "sh run.sh"
+  },
+  "dependencies": {
+    "compression": "^1.7.4"
+  }
+}

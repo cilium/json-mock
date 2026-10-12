@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.2
+﻿# syntax=docker/dockerfile:1.2
 
 # Copyright 2021 Authors of Cilium
 # SPDX-License-Identifier: Apache-2.0
@@ -7,7 +7,9 @@
 # Represents the plataform where the build is happening, do not mix with
 # TARGETARCH
 FROM docker.io/library/node:26.10.0-slim@sha256:ec7758ee051e457b468b32bde57b0879010b325bb9862718e9615225ce4aaae1
-RUN npm install -g json-server@v0.17.4 \
+ADD package.json /
+RUN npm install --omit=dev --prefix / \
+    && npm install -g json-server@v0.17.4 \
     && apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y tini curl iproute2 dnsutils \
